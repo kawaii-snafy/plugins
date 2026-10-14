@@ -3,6 +3,9 @@ import { expect, test } from 'claude-code/testing'
 const run = (stdout: string, exitCode = 0) => ({
   value: { exitCode, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
 })
+const shownPane = (id: string | undefined) => ({
+  value: id === undefined ? [] : [{ id, title: 'Файлы', isShown: true, isFocused: false, isPlaced: true }],
+})
 
 // Сводка в углу: цветные цифры без нулей, клик открывает панель на «Изменениях».
 test('сводка git в нижней строке ведёт к изменениям', async ($, on) => {
@@ -12,6 +15,7 @@ test('сводка git в нижней строке ведёт к изменен
     openedPane = e.id
     return { value: { isPlaced: true } }
   })
+  on('ui.panes', () => shownPane(openedPane))
   on('tool.call', () => ({ result: {} }))
   on('process.run', (_$, e) => {
     const cmd = e.argv.join(' ')
@@ -44,13 +48,18 @@ test('сводка git в нижней строке ведёт к изменен
   }
 })
 
-// Кнопка «дерево» есть и вне git: открывает панель на дереве, даже если был выбран список изменений.
+// Кнопка «дерево» есть и вне git: открывает панель на дереве; повторный клик её закрывает.
 test('кнопка дерева в нижней строке открывает дерево', async ($, on) => {
   let openedPane: string | undefined
   on('session.cwd', () => ({ value: '/plain' }))
   on('ui.open', (_$, e) => {
     openedPane = e.id
     return { value: { isPlaced: true } }
+  })
+  on('ui.panes', () => shownPane(openedPane))
+  on('ui.close', (_$, e) => {
+    if (e.id === openedPane) openedPane = undefined
+    return { value: undefined }
   })
   on('fs.list', () => ({ value: [{ name: 'readme.md', kind: 'file' }] }))
   on('process.run', () => run('', 128))
@@ -59,6 +68,9 @@ test('кнопка дерева в нижней строке открывает 
   expect(await footer.find({ key: 'git' })).toBeUndefined()
   await footer.press({ key: 'tree' })
   expect(openedPane).toBe('files')
+  await footer.press({ key: 'tree' })
+  expect(openedPane).toBeUndefined()
+  await footer.press({ key: 'tree' })
   await footer.unmount()
 
   const pane = await $.ui.mount({

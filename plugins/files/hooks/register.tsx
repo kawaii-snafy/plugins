@@ -240,11 +240,14 @@ export const register: Register = on => {
 
   // Нижняя строка справа: кнопка «дерево» и сводка git `⎇ main · 3 файла +42 −7`
   // (цифры цветные, нули не показываются). Кнопка открывает панель на дереве,
-  // клик по сводке — на «Изменениях». Метки режимов движка остаются перед ними.
+  // клик по сводке — на «Изменениях»; повторный клик, когда панель уже показана
+  // в этом режиме, закрывает её. Метки режимов движка остаются перед ними.
   on('ui.render', { component: 'SessionMode' }, async ($, e) => {
     const git = await read($, summary)
     const { Box, Button, Text } = $.ui.resolve(e)
     const showList = (mode: ListMode) => async () => {
+      const isShown = (await $.ui.panes()).some(p => p.id === PANE && p.isShown)
+      if (isShown && (await read($, listMode)) === mode) return $.ui.close({ id: PANE })
       await update($, listMode, () => mode)
       await $.ui.open({ id: PANE, title: TITLE })
     }
