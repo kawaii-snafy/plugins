@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "kawaii-snafy",
+  "owner": {
+    "name": "Ярослав (snafy)",
+    "email": "ya.shirokov@icloud.com"
+  },
+  "metadata": {
+    "description": "Личный маркетплейс плагинов Claude Code от kawaii-snafy",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "files",
+      "source": "./plugins/files",
+      "description": "Панель с файлами рабочей папки (и worktree); пути в ответах агента открываются в ней по клику"
+    }
+  ]
+}
