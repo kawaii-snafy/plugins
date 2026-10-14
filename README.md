@@ -5,7 +5,7 @@
 ## Установка
 
 ```
-/plugin marketplace add <путь-или-github-репо>
+/plugin marketplace add kawaii-snafy/plugins
 /plugin install <плагин>@kawaii-snafy
 ```
 
