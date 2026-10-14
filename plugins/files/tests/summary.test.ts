@@ -43,3 +43,28 @@ test('сводка git в нижней строке ведёт к изменен
     await pane.unmount()
   }
 })
+
+// Кнопка «дерево» есть и вне git: открывает панель на дереве, даже если был выбран список изменений.
+test('кнопка дерева в нижней строке открывает дерево', async ($, on) => {
+  let openedPane: string | undefined
+  on('session.cwd', () => ({ value: '/plain' }))
+  on('ui.open', (_$, e) => {
+    openedPane = e.id
+    return { value: { isPlaced: true } }
+  })
+  on('fs.list', () => ({ value: [{ name: 'readme.md', kind: 'file' }] }))
+  on('process.run', () => run('', 128))
+
+  const footer = await $.ui.mount({ plugin: 'files', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
+  expect(await footer.find({ key: 'git' })).toBeUndefined()
+  await footer.press({ key: 'tree' })
+  expect(openedPane).toBe('files')
+  await footer.unmount()
+
+  const pane = await $.ui.mount({
+    plugin: 'files', surface: 'terminal', component: 'Pane', requestId: 'files',
+    props: { title: 'Файлы', isFocused: true, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 40 }, view: {} },
+  })
+  expect(await pane.find({ key: 'file:readme.md' })).toBeDefined()
+  await pane.unmount()
+})

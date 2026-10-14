@@ -238,28 +238,37 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Сводка git справа в нижней строке: `⎇ main · 3 файла +42 −7`, цифры цветные,
-  // нули не показываются, клик открывает «Изменения». Метки режимов движка остаются перед ней.
-  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+  // Нижняя строка справа: кнопка «дерево» и сводка git `⎇ main · 3 файла +42 −7`
+  // (цифры цветные, нули не показываются). Кнопка открывает панель на дереве,
+  // клик по сводке — на «Изменениях». Метки режимов движка остаются перед ними.
+  on('ui.render', { component: 'SessionMode' }, async ($, e) => {
     const git = await read($, summary)
-    if (git === null) return next(e)
-
-    const { Button, Text } = $.ui.resolve(e)
-    const showChanges = async () => {
-      await update($, listMode, () => 'changes' as ListMode)
+    const { Box, Button, Text } = $.ui.resolve(e)
+    const showList = (mode: ListMode) => async () => {
+      await update($, listMode, () => mode)
       await $.ui.open({ id: PANE, title: TITLE })
     }
-    const head = [...e.props.modes, `⎇ ${git.branch}`]
-    if (git.isWorktree) head.push('worktree')
-    head.push(git.changed === 0 ? 'чисто' : files(git.changed))
+    const head = [...e.props.modes]
+    if (git !== null) {
+      head.push(`⎇ ${git.branch}`)
+      if (git.isWorktree) head.push('worktree')
+      head.push(git.changed === 0 ? 'чисто' : files(git.changed))
+    }
 
-    // Вся сводка — одна кнопка: клик открывает панель на списке изменений.
     return (
-      <Button key="git" plain onPress={showChanges}>
-        <Text dimColor>{head.join(' · ')}</Text>
-        {git.added > 0 && <Text color="success"> +{git.added}</Text>}
-        {git.removed > 0 && <Text color="error"> −{git.removed}</Text>}
-      </Button>
+      <Box flexDirection="row" gap={1}>
+        <Button key="tree" plain onPress={showList('tree')}>
+          <Text dimColor>▤ дерево</Text>
+        </Button>
+        {head.length > 0 && (
+          // Вся сводка — одна кнопка: клик открывает панель на списке изменений.
+          <Button key="git" plain onPress={showList('changes')}>
+            <Text dimColor>{head.join(' · ')}</Text>
+            {git !== null && git.added > 0 && <Text color="success"> +{git.added}</Text>}
+            {git !== null && git.removed > 0 && <Text color="error"> −{git.removed}</Text>}
+          </Button>
+        )}
+      </Box>
     )
   })
 

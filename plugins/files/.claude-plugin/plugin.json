@@ -1,6 +1,6 @@
 {
   "name": "files",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Панель с файлами рабочей папки (и worktree); пути в ответах агента открываются в ней по клику",
   "types": "./types/index.d.ts"
 }
